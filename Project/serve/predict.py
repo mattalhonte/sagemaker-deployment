@@ -57,6 +57,18 @@ def output_fn(prediction_output, accept):
     print('Serializing the generated output.')
     return str(prediction_output)
 
+
+def convert_and_pad_data(word_dict, data, pad=500):
+    result = []
+    lengths = []
+    
+    for sentence in data:
+        converted, leng = convert_and_pad(word_dict, sentence, pad)
+        result.append(converted)
+        lengths.append(leng)
+        
+    return np.array(result), np.array(lengths)
+
 def predict_fn(input_data, model):
     print('Inferring sentiment of input data.')
 
@@ -69,13 +81,13 @@ def predict_fn(input_data, model):
     #       You should produce two variables:
     #         data_X   - A sequence of length 500 which represents the converted review
     #         data_len - The length of the review
+    
 
-    data_X = None
-    data_len = None
+    data_X, data_len = convert_and_pad_data(model.word_dict, [input_data])
 
     # Using data_X and data_len we construct an appropriate input tensor. Remember
     # that our model expects input data of the form 'len, review[500]'.
-    data_pack = np.hstack((data_len, data_X))
+    data_pack = np.hstack((data_len, data_X[0]))
     data_pack = data_pack.reshape(1, -1)
     
     data = torch.from_numpy(data_pack)
@@ -86,7 +98,14 @@ def predict_fn(input_data, model):
 
     # TODO: Compute the result of applying the model to the input data. The variable `result` should
     #       be a numpy array which contains a single integer which is either 1 or 0
+    #print(model(data).shape)
+    output= model(data)
+    
+     
+    #The array didn't really agree with the Array format.  Might be better
+    #with a CSV output?  For now I'll just make it a single number
+    #result = np.array([np.round(output.item())], dtype=int)
+    result = np.round(output.item())
+    
 
-    result = None
-
-    return result
+    return int(result)
